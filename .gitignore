@@ -52,3 +52,31 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# IDE / Editor configs
+.vscode/
+.idea/
+*.code-workspace
+
+# Rider / VS / VS Code caches
+*.DotSettings.user
+*.vs/
+*.vscode/
+
+# Temporary folders for each lab
+**/bin/
+**/obj/
+**/TestResults/
+
+# Build artifacts
+artifacts/
+
+# macOS Finder files
+.DS_Store
