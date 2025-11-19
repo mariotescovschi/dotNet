@@ -5,9 +5,9 @@ namespace Product_Management_API.Commands;
 
 public class CreateProductCommand : IRequest<ProductProfileDto>
 {
-    public string Name { get; set; }
-    public string Brand { get; set; }
-    public string SKU { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Brand { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;
     public int Category { get; set; }
     public decimal Price { get; set; }
     public DateTime ReleaseDate { get; set; }
@@ -22,7 +22,7 @@ public class CreateProductCommand : IRequest<ProductProfileDto>
     {
         Name = request.Name;
         Brand = request.Brand;
-        SKU = request.SKU;
+        Sku = request.Sku;
         Category = (int)request.Category;
         Price = request.Price;
         ReleaseDate = request.ReleaseDate;

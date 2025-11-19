@@ -50,6 +50,105 @@ public static class ProductConstants
     // Brand initials placeholder
     public const string BrandInitialsPlaceholder = "?";
 
+    // Validation Rules - Name
+    public const int NameMinLength = 1;
+    public const int NameMaxLength = 200;
+    public const string NameRequiredMessage = "Product name is required";
+    public const string NameLengthMessage = "Product name must be between {0} and {1} characters";
+    public const string NameInappropriateContentMessage = "Product name contains inappropriate content";
+
+    // Validation Rules - Brand
+    public const int BrandMinLength = 2;
+    public const int BrandMaxLength = 100;
+    public const string BrandRequiredMessage = "Brand name is required";
+    public const string BrandLengthMessage = "Brand name must be between {0} and {1} characters";
+
+    public const string BrandInvalidCharactersMessage =
+        "Brand name contains invalid characters. Only letters, spaces, hyphens, apostrophes, dots, and numbers are allowed";
+
+    public const string BrandMinLengthClothingMessage = "Brand name must be at least 3 characters";
+    public const string BrandNamePattern = @"^[a-zA-Z0-9\s\-'.]+$";
+
+    // Validation Rules - SKU
+    public const int SkuMinLength = 5;
+    public const int SkuMaxLength = 20;
+    public const string SkuRequiredMessage = "SKU is required";
+    public const string SkuFormatMessage = "SKU must be alphanumeric with hyphens, between {0} and {1} characters";
+    public const string SkuUniqueMessage = "SKU must be unique in the system";
+    public const string SkuPattern = @"^[a-zA-Z0-9\-]{5,20}$";
+
+    // Validation Rules - Category
+    public const string CategoryValidMessage = "Category must be a valid enum value";
+
+    // Validation Rules - Price
+    public const decimal MaxPrice = 10000m;
+    public const decimal MinPriceValue = 0.01m;
+    public const decimal ElectronicsMinPrice = 50m;
+    public const decimal HighValueProductThreshold = 500m;
+    public const decimal HomeMaxPrice = 200m;
+    public const decimal ExpensiveProductThreshold = 100m;
+    public const string PriceGreaterThanZeroMessage = "Price must be greater than 0";
+    public const string PriceMaxMessage = "Price must be less than {0:C2}";
+    public const string ElectronicsMinPriceMessage = "Electronics products must have a minimum price of {0:C2}";
+    public const string HomeMaxPriceMessage = "Home products must not exceed $200.00";
+
+    // Validation Rules - ReleaseDate
+    public const int MinYear = 1900;
+    public const int ElectronicsLastYears = 5;
+    public const string ReleaseDateFutureMessage = "Release date cannot be in the future";
+    public const string ReleaseDateMinYearMessage = "Release date cannot be before year {0}";
+
+    public const string ElectronicsReleaseDateMessage =
+        "Electronics products must be released within the last {0} years";
+
+    // Validation Rules - StockQuantity
+    public const int MaxStockQuantity = 100000;
+    public const int ExpensiveProductMaxStock = 20;
+    public const int HighValueProductMaxStock = 10;
+    public const string StockNegativeMessage = "Stock quantity cannot be negative";
+    public const string StockMaxMessage = "Stock quantity cannot exceed {0}";
+    public const string ExpensiveProductStockMessage = "Expensive products (>{0}) must have limited stock (≤{1} units)";
+
+    // Validation Rules - ImageUrl
+    public const string ImageUrlValidMessage =
+        "Image URL must be valid (HTTP/HTTPS protocol and must end with valid image extensions: .jpg, .jpeg, .png, .gif, .webp)";
+
+    public const string ImageExtensionsPattern = @"\.(jpg|jpeg|png|gif|webp)$";
+
+    // Business Rules - Daily Product Limit
+    public const int MaxDailyProducts = 500;
+    public const string DailyProductLimitMessage = "Daily product addition limit reached. Products added today: {0}";
+
+    // Business Rules - High Value Product
+    public const int HighValueProductMaxStockLimit = 10;
+
+    // Inappropriate Words List
+    public static readonly string[] InappropriateWords =
+    {
+        "offensive", "inappropriate", "banned", "blocked"
+    };
+
+    // Restricted Home Words
+    public static readonly string[] RestrictedHomeWords =
+    {
+        "danger", "hazard", "toxic", "explosive"
+    };
+
+    // Technology Keywords for Electronics
+    public static readonly string[] TechnologyKeywords =
+    {
+        "tech", "gadget", "device", "electronics", "software", "hardware"
+    };
+
+    public const string ElectronicsTechnologyKeywordsMessage =
+        "Electronics product name must contain technology-related keywords";
+
+    public const string HomeInappropriateContentMessage =
+        "Home product name contains inappropriate content for home category";
+
+    public const string NameUniquePerBrandMessage = "Product name must be unique for the same brand";
+    public const string BusinessRulesFailedMessage = "Product request failed business validation";
+
     // Logging
     public const string LoggerPrefix = "[CreateProductHandler]";
     public const string LoggerSuccessMessage = "New product created successfully.";
@@ -66,11 +165,11 @@ public static class ProductConstants
     public const string ProductCreationStartedMessage =
         "Product creation started. Name: {ProductName}, Brand: {Brand}, SKU: {SKU}, Category: {Category}";
 
-    public const string SKUValidationCompletedMessage =
+    public const string SkuValidationCompletedMessage =
         "SKU validation completed for SKU: {SKU}. Exists: {SKUExists}, Duration: {ValidationDurationMs}ms";
 
-    public const string SKUValidationFailedMessage = "SKU validation failed. Duplicate SKU detected: {SKU}";
-    public const string SKUAlreadyExistsMessage = "A product with SKU '{SKU}' already exists. SKU must be unique.";
+    public const string SkuValidationFailedMessage = "SKU validation failed. Duplicate SKU detected: {SKU}";
+    public const string SkuAlreadyExistsMessage = "A product with SKU '{SKU}' already exists. SKU must be unique.";
 
     public const string StockValidationCompletedMessage =
         "Stock validation completed. Quantity: {StockQuantity}, Valid: {IsValidStock}, Duration: {ValidationDurationMs}ms";
@@ -90,4 +189,10 @@ public static class ProductConstants
     public const string OperationIdKey = "OperationId";
     public const string OperationIdCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public const int OperationIdLength = 8;
+
+    // Entity Property Max Lengths
+    public const int NameMaxLengthDb = 255;
+    public const int BrandMaxLengthDb = 255;
+    public const int SkuMaxLengthDb = 50;
+    public const int ImageUrlMaxLengthDb = 2048;
 }

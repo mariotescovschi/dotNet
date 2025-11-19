@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Product_Management_API.Commands;
 using Product_Management_API.Data;
 using Product_Management_API.DTOs;
+using Product_Management_API.Validators;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,7 @@ builder.Services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseInMemoryDatabase("ProductManagementDb"));
 builder.Services.AddMemoryCache();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateProductProfileValidator>();
 
 var app = builder.Build();
 

@@ -4,9 +4,9 @@ namespace Product_Management_API.DTOs;
 
 public class CreateProductProfileRequest
 {
-    public string Name { get; set; }
-    public string Brand { get; set; }
-    public string SKU { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Brand { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;
     public ProductCategory Category { get; set; }
     public decimal Price { get; set; }
     public DateTime ReleaseDate { get; set; }
