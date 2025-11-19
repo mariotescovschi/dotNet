@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Product_Management_API.Constants;
 using Product_Management_API.Entities;
 
 namespace Product_Management_API.Data;
@@ -22,21 +23,21 @@ public class ApplicationContext : DbContext
         modelBuilder.Entity<Product>()
             .Property(p => p.Name)
             .IsRequired()
-            .HasMaxLength(255);
+            .HasMaxLength(ProductConstants.NameMaxLengthDb);
 
         modelBuilder.Entity<Product>()
             .Property(p => p.Brand)
             .IsRequired()
-            .HasMaxLength(255);
+            .HasMaxLength(ProductConstants.BrandMaxLengthDb);
 
         modelBuilder.Entity<Product>()
-            .Property(p => p.SKU)
+            .Property(p => p.Sku)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ProductConstants.SkuMaxLengthDb);
 
         // Create unique constraint on SKU
         modelBuilder.Entity<Product>()
-            .HasIndex(p => p.SKU)
+            .HasIndex(p => p.Sku)
             .IsUnique();
 
         modelBuilder.Entity<Product>()

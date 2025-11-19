@@ -2,7 +2,6 @@ using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Product_Management_API.Commands;
 using Product_Management_API.Constants;
 using Product_Management_API.Data;
@@ -48,18 +47,18 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
                     ProductConstants.ProductCreationStartedMessage,
                     request.Name,
                     request.Brand,
-                    request.SKU,
+                    request.Sku,
                     request.Category);
 
                 var validationStartTime = DateTime.UtcNow;
 
-                var skuExists = await _context.Products.AnyAsync(p => p.SKU == request.SKU, cancellationToken);
+                var skuExists = await _context.Products.AnyAsync(p => p.Sku == request.Sku, cancellationToken);
                 var skuValidationDuration = DateTime.UtcNow - validationStartTime;
 
                 _logger.LogInformation(
                     ProductLogEvents.SKUValidationPerformed,
-                    ProductConstants.SKUValidationCompletedMessage,
-                    request.SKU,
+                    ProductConstants.SkuValidationCompletedMessage,
+                    request.Sku,
                     skuExists,
                     skuValidationDuration.TotalMilliseconds);
 
@@ -67,10 +66,11 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
                 {
                     _logger.LogError(
                         ProductLogEvents.ProductValidationFailed,
-                        ProductConstants.SKUValidationFailedMessage,
-                        request.SKU);
+                        ProductConstants.SkuValidationFailedMessage,
+                        request.Sku);
 
-                    throw new ValidationException(string.Format(ProductConstants.SKUAlreadyExistsMessage, request.SKU));
+                    throw new ValidationException(
+                        $"A product with SKU '{request.Sku}' already exists. SKU must be unique.");
                 }
 
                 var stockValidationStartTime = DateTime.UtcNow;
@@ -90,7 +90,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
                 {
                     Name = request.Name,
                     Brand = request.Brand,
-                    SKU = request.SKU,
+                    Sku = request.Sku,
                     Category = (ProductCategory)request.Category,
                     Price = request.Price,
                     ReleaseDate = request.ReleaseDate,
@@ -135,7 +135,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
                 var metrics = new ProductCreationMetrics(
                     OperationId: operationId,
                     ProductName: product.Name,
-                    SKU: product.SKU,
+                    SKU: product.Sku,
                     Category: product.Category,
                     ValidationDuration: totalValidationDuration,
                     DatabaseSaveDuration: dbOperationDuration,
@@ -153,7 +153,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
                 var errorMetrics = new ProductCreationMetrics(
                     OperationId: operationId,
                     ProductName: request.Name,
-                    SKU: request.SKU,
+                    SKU: request.Sku,
                     Category: (ProductCategory)request.Category,
                     ValidationDuration: TimeSpan.Zero,
                     DatabaseSaveDuration: TimeSpan.Zero,
@@ -172,13 +172,13 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
                 _logger.LogError(
                     ProductLogEvents.ProductValidationFailed,
                     ProductConstants.UnexpectedErrorMessage,
-                    request.SKU,
+                    request.Sku,
                     ex.Message);
 
                 var errorMetrics = new ProductCreationMetrics(
                     OperationId: operationId,
                     ProductName: request.Name,
-                    SKU: request.SKU,
+                    SKU: request.Sku,
                     Category: (ProductCategory)request.Category,
                     ValidationDuration: TimeSpan.Zero,
                     DatabaseSaveDuration: TimeSpan.Zero,
