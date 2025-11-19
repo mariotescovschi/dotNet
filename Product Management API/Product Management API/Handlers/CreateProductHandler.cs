@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Product_Management_API.Commands;
 using Product_Management_API.Constants;
 using Product_Management_API.Data;
@@ -9,6 +10,8 @@ using Product_Management_API.DTOs;
 using Product_Management_API.Entities;
 using Product_Management_API.Enums;
 using Product_Management_API.Exceptions;
+using Product_Management_API.Extensions;
+using Product_Management_API.Metrics;
 
 namespace Product_Management_API.Handlers;
 
@@ -17,50 +20,185 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
     private readonly ApplicationContext _context;
     private readonly IMapper _mapper;
     private readonly IMemoryCache _cache;
+    private readonly ILogger<CreateProductHandler> _logger;
 
-    public CreateProductHandler(ApplicationContext context, IMapper mapper, IMemoryCache cache)
+    public CreateProductHandler(
+        ApplicationContext context,
+        IMapper mapper,
+        IMemoryCache cache,
+        ILogger<CreateProductHandler> logger)
     {
         _context = context;
         _mapper = mapper;
         _cache = cache;
+        _logger = logger;
     }
 
     public async Task<ProductProfileDto> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
-        var skuExists = await _context.Products.AnyAsync(p => p.SKU == request.SKU, cancellationToken);
-        if (skuExists)
+        var operationId = GenerateOperationId();
+        var operationStartTime = DateTime.UtcNow;
+
+        using (_logger.BeginScope(new Dictionary<string, object> { { ProductConstants.OperationIdKey, operationId } }))
         {
-            throw new ValidationException($"A product with SKU '{request.SKU}' already exists. SKU must be unique.");
+            try
+            {
+                _logger.LogInformation(
+                    ProductLogEvents.ProductCreationStarted,
+                    ProductConstants.ProductCreationStartedMessage,
+                    request.Name,
+                    request.Brand,
+                    request.SKU,
+                    request.Category);
+
+                var validationStartTime = DateTime.UtcNow;
+
+                var skuExists = await _context.Products.AnyAsync(p => p.SKU == request.SKU, cancellationToken);
+                var skuValidationDuration = DateTime.UtcNow - validationStartTime;
+
+                _logger.LogInformation(
+                    ProductLogEvents.SKUValidationPerformed,
+                    ProductConstants.SKUValidationCompletedMessage,
+                    request.SKU,
+                    skuExists,
+                    skuValidationDuration.TotalMilliseconds);
+
+                if (skuExists)
+                {
+                    _logger.LogError(
+                        ProductLogEvents.ProductValidationFailed,
+                        ProductConstants.SKUValidationFailedMessage,
+                        request.SKU);
+
+                    throw new ValidationException(string.Format(ProductConstants.SKUAlreadyExistsMessage, request.SKU));
+                }
+
+                var stockValidationStartTime = DateTime.UtcNow;
+                var isValidStock = request.StockQuantity >= ProductConstants.ZeroStock;
+                var stockValidationDuration = DateTime.UtcNow - stockValidationStartTime;
+
+                _logger.LogInformation(
+                    ProductLogEvents.StockValidationPerformed,
+                    ProductConstants.StockValidationCompletedMessage,
+                    request.StockQuantity,
+                    isValidStock,
+                    stockValidationDuration.TotalMilliseconds);
+
+                var totalValidationDuration = DateTime.UtcNow - validationStartTime;
+
+                var createRequest = new CreateProductProfileRequest
+                {
+                    Name = request.Name,
+                    Brand = request.Brand,
+                    SKU = request.SKU,
+                    Category = (ProductCategory)request.Category,
+                    Price = request.Price,
+                    ReleaseDate = request.ReleaseDate,
+                    ImageUrl = request.ImageUrl,
+                    StockQuantity = request.StockQuantity
+                };
+
+                var product = _mapper.Map<Product>(createRequest);
+
+                var dbOperationStartTime = DateTime.UtcNow;
+
+                _logger.LogInformation(
+                    ProductLogEvents.DatabaseOperationStarted,
+                    ProductConstants.DatabaseSaveStartedMessage,
+                    product.Name);
+
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var dbOperationDuration = DateTime.UtcNow - dbOperationStartTime;
+
+                _logger.LogInformation(
+                    ProductLogEvents.DatabaseOperationCompleted,
+                    ProductConstants.DatabaseSaveCompletedMessage,
+                    product.Id,
+                    dbOperationDuration.TotalMilliseconds);
+
+                var cacheOperationStartTime = DateTime.UtcNow;
+
+                _cache.Remove(ProductConstants.AllProductsCacheKey);
+
+                var cacheOperationDuration = DateTime.UtcNow - cacheOperationStartTime;
+
+                _logger.LogInformation(
+                    ProductLogEvents.CacheOperationPerformed,
+                    ProductConstants.CacheInvalidationCompletedMessage,
+                    ProductConstants.AllProductsCacheKey,
+                    cacheOperationDuration.TotalMilliseconds);
+
+                var totalDuration = DateTime.UtcNow - operationStartTime;
+
+                var metrics = new ProductCreationMetrics(
+                    OperationId: operationId,
+                    ProductName: product.Name,
+                    SKU: product.SKU,
+                    Category: product.Category,
+                    ValidationDuration: totalValidationDuration,
+                    DatabaseSaveDuration: dbOperationDuration,
+                    TotalDuration: totalDuration,
+                    Success: true);
+
+                _logger.LogProductCreationMetrics(metrics);
+
+                return _mapper.Map<ProductProfileDto>(product);
+            }
+            catch (ValidationException ex)
+            {
+                var totalDuration = DateTime.UtcNow - operationStartTime;
+
+                var errorMetrics = new ProductCreationMetrics(
+                    OperationId: operationId,
+                    ProductName: request.Name,
+                    SKU: request.SKU,
+                    Category: (ProductCategory)request.Category,
+                    ValidationDuration: TimeSpan.Zero,
+                    DatabaseSaveDuration: TimeSpan.Zero,
+                    TotalDuration: totalDuration,
+                    Success: false,
+                    ErrorReason: ex.Message);
+
+                _logger.LogProductCreationMetrics(errorMetrics);
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                var totalDuration = DateTime.UtcNow - operationStartTime;
+
+                _logger.LogError(
+                    ProductLogEvents.ProductValidationFailed,
+                    ProductConstants.UnexpectedErrorMessage,
+                    request.SKU,
+                    ex.Message);
+
+                var errorMetrics = new ProductCreationMetrics(
+                    OperationId: operationId,
+                    ProductName: request.Name,
+                    SKU: request.SKU,
+                    Category: (ProductCategory)request.Category,
+                    ValidationDuration: TimeSpan.Zero,
+                    DatabaseSaveDuration: TimeSpan.Zero,
+                    TotalDuration: totalDuration,
+                    Success: false,
+                    ErrorReason: ex.Message);
+
+                _logger.LogProductCreationMetrics(errorMetrics);
+
+                throw;
+            }
         }
+    }
 
-        var createRequest = new CreateProductProfileRequest
-        {
-            Name = request.Name,
-            Brand = request.Brand,
-            SKU = request.SKU,
-            Category = (ProductCategory)request.Category,
-            Price = request.Price,
-            ReleaseDate = request.ReleaseDate,
-            ImageUrl = request.ImageUrl,
-            StockQuantity = request.StockQuantity
-        };
-
-        var product = _mapper.Map<Product>(createRequest);
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        Console.WriteLine($"{ProductConstants.LoggerPrefix} {ProductConstants.LoggerSuccessMessage}");
-        Console.WriteLine($"  - {ProductConstants.LoggerIdLabel}: {product.Id}");
-        Console.WriteLine($"  - {ProductConstants.LoggerNameLabel}: {product.Name}");
-        Console.WriteLine($"  - {ProductConstants.LoggerBrandLabel}: {product.Brand}");
-        Console.WriteLine($"  - {ProductConstants.LoggerCategoryLabel}: {product.Category}");
-        Console.WriteLine($"  - {ProductConstants.LoggerSkuLabel}: {product.SKU}");
-        Console.WriteLine($"  - {ProductConstants.LoggerPriceLabel}: {product.Price:C2}");
-        Console.WriteLine($"  - {ProductConstants.LoggerStockQuantityLabel}: {product.StockQuantity}");
-        Console.WriteLine($"  - {ProductConstants.LoggerCreatedAtLabel}: {product.CreatedAt:O}");
-
-        _cache.Remove(ProductConstants.AllProductsCacheKey);
-
-        return _mapper.Map<ProductProfileDto>(product);
+    private static string GenerateOperationId()
+    {
+        var random = new Random();
+        return new string(Enumerable.Range(0, ProductConstants.OperationIdLength)
+            .Select(_ =>
+                ProductConstants.OperationIdCharacters[random.Next(ProductConstants.OperationIdCharacters.Length)])
+            .ToArray());
     }
 }
