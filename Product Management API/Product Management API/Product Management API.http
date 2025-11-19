@@ -1,0 +1,280 @@
+// Product Management API.http
+
+### Base URL
+@baseUrl = https://localhost:7001
+@contentType = application/json
+
+### Test 1: Create Valid Electronics Product
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "iPhone 15 Pro",
+  "brand": "Apple Inc",
+  "sku": "IPHONE-15-PRO-001",
+  "category": 0,
+  "price": 1099.99,
+  "releaseDate": "2024-09-22T00:00:00Z",
+  "imageUrl": "https://example.com/iphone15pro.jpg",
+  "stockQuantity": 50
+}
+
+### Test 2: Create Valid Clothing Product
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Nike Running Shoes",
+  "brand": "Nike",
+  "sku": "NIKE-RUN-001",
+  "category": 1,
+  "price": 150.00,
+  "releaseDate": "2024-10-01T00:00:00Z",
+  "imageUrl": "https://example.com/nike-shoes.jpg",
+  "stockQuantity": 25
+}
+
+### Test 3: Create Books Product
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Clean Code",
+  "brand": "Prentice Hall",
+  "sku": "BOOK-CLEAN-CODE-001",
+  "category": 2,
+  "price": 45.99,
+  "releaseDate": "2008-08-01T00:00:00Z",
+  "imageUrl": "https://example.com/clean-code.jpg",
+  "stockQuantity": 100
+}
+
+### Test 4: Create Home Product (10% Discount + No Image)
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "IKEA Sofa",
+  "brand": "IKEA",
+  "sku": "IKEA-SOFA-001",
+  "category": 3,
+  "price": 500.00,
+  "releaseDate": "2024-06-15T00:00:00Z",
+  "imageUrl": "https://example.com/ikea-sofa.jpg",
+  "stockQuantity": 10
+}
+
+### Expected Response for Home Category:
+### - formattedPrice: "$450.00" (10% discount applied)
+### - imageUrl: null (content filtering)
+### - categoryDisplayName: "Home & Garden"
+
+### Test 5: Create Product with Last Item (1 stock)
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Limited Edition Watch",
+  "brand": "Rolex",
+  "sku": "ROLEX-SUBMARINER-SPECIAL",
+  "category": 0,
+  "price": 12000.00,
+  "releaseDate": "2023-01-01T00:00:00Z",
+  "imageUrl": "https://example.com/rolex.jpg",
+  "stockQuantity": 1
+}
+
+### Expected: availabilityStatus: "Last Item"
+
+### Test 6: Create Product with Limited Stock (2-5 items)
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Sony Headphones",
+  "brand": "Sony Corporation",
+  "sku": "SONY-WH1000-XM5",
+  "category": 0,
+  "price": 399.99,
+  "releaseDate": "2023-08-20T00:00:00Z",
+  "imageUrl": "https://example.com/sony-headphones.jpg",
+  "stockQuantity": 3
+}
+
+### Expected: availabilityStatus: "Limited Stock"
+
+### Test 7: Create Product with Zero Stock (Should Still Be Available)
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Out of Stock Item",
+  "brand": "Generic Brand",
+  "sku": "OOS-ITEM-001",
+  "category": 0,
+  "price": 99.99,
+  "releaseDate": "2024-11-10T00:00:00Z",
+  "imageUrl": "https://example.com/item.jpg",
+  "stockQuantity": 0
+}
+
+### Expected: 
+### - isAvailable: false
+### - availabilityStatus: "Unavailable"
+
+### Test 8: Duplicate SKU (Should Fail)
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "iPhone 15 Pro Duplicate",
+  "brand": "Apple Inc",
+  "sku": "IPHONE-15-PRO-001",
+  "category": 0,
+  "price": 1099.99,
+  "releaseDate": "2024-09-22T00:00:00Z",
+  "imageUrl": "https://example.com/iphone15pro.jpg",
+  "stockQuantity": 10
+}
+
+### Expected Error: 
+### ValidationException: A product with SKU 'IPHONE-15-PRO-001' already exists. SKU must be unique.
+
+### Test 9: Brand Initials Extraction
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Test Product Multi-Word Brand",
+  "brand": "Samsung Electronics Corporation",
+  "sku": "SAMSUNG-TEST-001",
+  "category": 0,
+  "price": 299.99,
+  "releaseDate": "2024-11-19T00:00:00Z",
+  "imageUrl": "https://example.com/samsung.jpg",
+  "stockQuantity": 5
+}
+
+### Expected: brandInitials: "SC" (first letter first word + first letter last word)
+
+### Test 10: Product Age Calculation - New Release
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Brand New Product",
+  "brand": "NewCorp",
+  "sku": "NEW-PRODUCT-001",
+  "category": 0,
+  "price": 199.99,
+  "releaseDate": "2024-11-15T00:00:00Z",
+  "imageUrl": "https://example.com/new.jpg",
+  "stockQuantity": 20
+}
+
+### Expected: productAge: "New Release" (< 30 days)
+
+### Test 11: Product Age Calculation - Years Old
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Old Product",
+  "brand": "OldBrand",
+  "sku": "OLD-PRODUCT-001",
+  "category": 2,
+  "price": 29.99,
+  "releaseDate": "2020-01-01T00:00:00Z",
+  "imageUrl": "https://example.com/old.jpg",
+  "stockQuantity": 15
+}
+
+### Expected: productAge: "4 years old" (between 365 and 1825 days)
+
+### Test 12: Product Age Calculation - Classic
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Classic Product",
+  "brand": "ClassicBrand",
+  "sku": "CLASSIC-PRODUCT-001",
+  "category": 2,
+  "price": 19.99,
+  "releaseDate": "2015-01-01T00:00:00Z",
+  "imageUrl": "https://example.com/classic.jpg",
+  "stockQuantity": 100
+}
+
+### Expected: productAge: "Classic" (>= 1825 days / 5 years)
+
+### Test 13: With Empty Brand (Brand Initials Should Be "?")
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "No Brand Product",
+  "brand": "",
+  "sku": "NO-BRAND-001",
+  "category": 0,
+  "price": 79.99,
+  "releaseDate": "2024-11-01T00:00:00Z",
+  "imageUrl": "https://example.com/nobrand.jpg",
+  "stockQuantity": 5
+}
+
+### Expected: brandInitials: "?"
+
+### Test 14: Default StockQuantity (Should be 1)
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Default Stock Product",
+  "brand": "TestBrand",
+  "sku": "DEFAULT-STOCK-001",
+  "category": 0,
+  "price": 99.99,
+  "releaseDate": "2024-11-19T00:00:00Z",
+  "imageUrl": "https://example.com/default.jpg"
+}
+
+### Expected: 
+### - stockQuantity: 1 (default value)
+### - isAvailable: true
+### - availabilityStatus: "Last Item"
+
+### Test 15: Verify All DTOs Mapping
+### This test verifies that ProductProfileDto has all required properties
+### including derived properties populated by resolvers
+
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Complete Test Product",
+  "brand": "Complete Brand Test",
+  "sku": "COMPLETE-TEST-001",
+  "category": 1,
+  "price": 250.50,
+  "releaseDate": "2024-10-15T00:00:00Z",
+  "imageUrl": "https://example.com/complete.jpg",
+  "stockQuantity": 8
+}
+
+### Expected Response Should Include:
+### - id: Guid
+### - name: "Complete Test Product"
+### - brand: "Complete Brand Test"
+### - sku: "COMPLETE-TEST-001"
+### - price: 250.50
+### - formattedPrice: "$250.50"
+### - categoryDisplayName: "Clothing & Fashion"
+### - releaseDate: "2024-10-15T00:00:00Z"
+### - createdAt: DateTime (current UTC time)
+### - imageUrl: "https://example.com/complete.jpg"
+### - isAvailable: true
+### - stockQuantity: 8
+### - productAge: "X months old"
+### - brandInitials: "CB"
+### - availabilityStatus: "In Stock"
