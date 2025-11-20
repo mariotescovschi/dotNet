@@ -99,6 +99,9 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
                 };
 
                 var product = _mapper.Map<Product>(createRequest);
+                
+                // Ensure category is set correctly before mapping to DTO
+                product.Category = (ProductCategory)request.Category;
 
                 var dbOperationStartTime = DateTime.UtcNow;
 

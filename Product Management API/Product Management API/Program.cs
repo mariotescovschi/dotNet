@@ -11,9 +11,24 @@ using FluentValidation;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-// Register both AutoMapper profiles
-builder.Services.AddAutoMapper(typeof(ProductMappingProfile), typeof(AdvancedProductMappingProfile));
-builder.Services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+// Register AutoMapper with all resolvers from the assembly
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<ProductMappingProfile>();
+    cfg.AddProfile<AdvancedProductMappingProfile>();
+}, typeof(AdvancedProductMappingProfile).Assembly);
+
+// Register all value resolvers for dependency injection
+builder.Services.AddScoped<CategoryDisplayResolver>();
+builder.Services.AddScoped<PriceFormatterResolver>();
+builder.Services.AddScoped<ProductAgeResolver>();
+builder.Services.AddScoped<BrandInitialsResolver>();
+builder.Services.AddScoped<AvailabilityStatusResolver>();
+builder.Services.AddScoped<ConditionalPriceResolver>();
+builder.Services.AddScoped<ConditionalImageUrlResolver>();
+
+builder.Services.AddMediatR(typeof(Program));
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseInMemoryDatabase("ProductManagementDb"));
 builder.Services.AddMemoryCache();

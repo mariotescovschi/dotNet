@@ -5,7 +5,7 @@
 @contentType = application/json
 
 ### Test 1: Create Valid Electronics Product
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -20,7 +20,7 @@ Content-Type: {{contentType}}
 }
 
 ### Test 2: Create Valid Clothing Product
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -35,7 +35,7 @@ Content-Type: {{contentType}}
 }
 
 ### Test 3: Create Books Product
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -50,7 +50,7 @@ Content-Type: {{contentType}}
 }
 
 ### Test 4: Create Home Product (10% Discount + No Image)
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -70,7 +70,7 @@ Content-Type: {{contentType}}
 ### - categoryDisplayName: "Home & Garden"
 
 ### Test 5: Create Product with Last Item (1 stock)
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -87,7 +87,7 @@ Content-Type: {{contentType}}
 ### Expected: availabilityStatus: "Last Item"
 
 ### Test 6: Create Product with Limited Stock (2-5 items)
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -104,7 +104,7 @@ Content-Type: {{contentType}}
 ### Expected: availabilityStatus: "Limited Stock"
 
 ### Test 7: Create Product with Zero Stock (Should Still Be Available)
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -123,7 +123,7 @@ Content-Type: {{contentType}}
 ### - availabilityStatus: "Unavailable"
 
 ### Test 8: Duplicate SKU (Should Fail)
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -141,7 +141,7 @@ Content-Type: {{contentType}}
 ### ValidationException: A product with SKU 'IPHONE-15-PRO-001' already exists. SKU must be unique.
 
 ### Test 9: Brand Initials Extraction
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -158,7 +158,7 @@ Content-Type: {{contentType}}
 ### Expected: brandInitials: "SC" (first letter first word + first letter last word)
 
 ### Test 10: Product Age Calculation - New Release
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -175,7 +175,7 @@ Content-Type: {{contentType}}
 ### Expected: productAge: "New Release" (< 30 days)
 
 ### Test 11: Product Age Calculation - Years Old
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -192,7 +192,7 @@ Content-Type: {{contentType}}
 ### Expected: productAge: "4 years old" (between 365 and 1825 days)
 
 ### Test 12: Product Age Calculation - Classic
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -209,7 +209,7 @@ Content-Type: {{contentType}}
 ### Expected: productAge: "Classic" (>= 1825 days / 5 years)
 
 ### Test 13: With Empty Brand (Brand Initials Should Be "?")
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -226,7 +226,7 @@ Content-Type: {{contentType}}
 ### Expected: brandInitials: "?"
 
 ### Test 14: Default StockQuantity (Should be 1)
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
@@ -248,7 +248,7 @@ Content-Type: {{contentType}}
 ### This test verifies that ProductProfileDto has all required properties
 ### including derived properties populated by resolvers
 
-POST {{baseUrl}}/api/products
+POST {{baseUrl}}/products
 Content-Type: {{contentType}}
 
 {
