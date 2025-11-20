@@ -4,16 +4,22 @@ using Product_Management_API.Commands;
 using Product_Management_API.Data;
 using Product_Management_API.DTOs;
 using Product_Management_API.Validators;
+using Product_Management_API.Mapping;
+using Product_Management_API.Middleware;
 using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+// Register both AutoMapper profiles
+builder.Services.AddAutoMapper(typeof(ProductMappingProfile), typeof(AdvancedProductMappingProfile));
 builder.Services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(Program).Assembly));
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseInMemoryDatabase("ProductManagementDb"));
 builder.Services.AddMemoryCache();
+// Register CreateProductProfileValidator as scoped service
+builder.Services.AddScoped<CreateProductProfileValidator>();
+// Register all validators from assembly containing CreateProductProfileValidator
 builder.Services.AddValidatorsFromAssemblyContaining<CreateProductProfileValidator>();
 
 var app = builder.Build();
@@ -24,6 +30,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+// Add Correlation Middleware to HTTP pipeline
+app.UseMiddleware<CorrelationMiddleware>();
 
 var summaries = new[]
 {
@@ -44,13 +52,15 @@ app.MapGet("/weatherforecast", () =>
     })
     .WithName("GetWeatherForecast");
 
-app.MapPost("/api/products", async (CreateProductProfileRequest request, IMediator mediator) =>
+// Update endpoint mapping to /products with product-specific documentation
+app.MapPost("/products", async (CreateProductProfileRequest request, IMediator mediator) =>
     {
         var command = new CreateProductCommand(request);
         return await mediator.Send(command);
     })
     .WithName("CreateProduct")
     .WithOpenApi()
+    .WithDescription("Creates a new product with validation, mapping, and logging")
     .Produces<ProductProfileDto>(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status400BadRequest);
 
